@@ -10,4 +10,5 @@ mod mandelbrot;
 
 fn main() {
     mandelbrot::mandelbrot(3840,2160,"mandelbrot.png");
+    mandelbrot::julia(3840,2160,"julia.png");
 }
