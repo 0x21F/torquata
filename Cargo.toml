@@ -7,13 +7,9 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bcrypt="^0.4"
-chrono="^0.4"
-env_logger="^0.6"
+color_scaling = "^0.0"
 image = "^0.21"
 num-complex="^0.2"
-ratelimit="^0.4"
-rocket="^0.4"
-serde_derive="^1.0"
-uuid="^0.7"
-color_scaling = "^0.0"
+palette="^0.4"
+rayon="^1.1"
+serde={version = "^1.0", features = ["derive"]}

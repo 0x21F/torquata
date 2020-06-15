@@ -1,20 +1,43 @@
+use color_scaling::scale_rgb;
 use image::{ImageBuffer, Rgb};
 use num_complex::Complex;
-use color_scaling::scale_rgb;
+use rayon::prelude::*;
+use serde::{Serialize, Deserialize};
+use std::io::Result;
+#[derive(Deserialize)]
+pub enum FractalType{
+    Julia(f64,f64),
+    Mandelbrot,
+    Tricorn,
+}
 
-pub fn julia(dimension_x: u32, dimension_y: u32, file_path: &str){
-    let (re,im) = (-0.4,0.6);
+#[derive(Deserialize)]
+pub struct Fractal {
+    pub fractal_type: FractalType,
+    pub dim_x: u32,
+    pub dim_y: u32,
+    pub path: String,
+}
+
+
+pub fn julia(frac: Fractal) -> Result<()>{
+    let mut imgbuf: ImageBuffer<Rgb<u8>, Vec<u8>> = ImageBuffer::new(frac.dim_x, frac.dim_y);
+    let max_iter = 1000;
+    let (re, im);
     
-    let mut imgbuf: ImageBuffer<Rgb<u8>, Vec<u8>> = ImageBuffer::new(dimension_x, dimension_y);
-    let max_iter = 1000; 
-    
+    if let FractalType::Julia(real,imaginary) = frac.fractal_type{
+        re = real;
+        im = imaginary;
+    }
+    else {
+        re = -0.79;
+        im = 0.15;
+    }
     let high: Rgb<u8> = Rgb([106,255,206]);
     let low: Rgb<u8> = Rgb([5,5,5]);
-
-    for x in 0..dimension_x {
-        for y in 0..dimension_y {
-            let cx = (x as f32 / dimension_x as f32) * 3.5 - 2.5;
-            let cy = (y as f32 / dimension_y as f32) * 2.0 - 1.0;
+    imgbuf.enumerate_pixels_mut().par_bridge().for_each(|(x, y, pix)|{
+            let cx = (x as f64 / frac.dim_x as f64) * 3.5 - 2.5;
+            let cy = (y as f64 / frac.dim_y as f64) * 2.0 - 1.0;
 
             let c = Complex::new(re ,im);
             let mut z = Complex::new(cx, cy);
@@ -24,32 +47,30 @@ pub fn julia(dimension_x: u32, dimension_y: u32, file_path: &str){
                 z = z * z + c;
                 i += 1;
             }
-            let pixel = imgbuf.get_pixel_mut(x, y);
             if i < max_iter {
-                *pixel = scale_rgb(&low, &high, (i as f64)/max_iter as f64).unwrap();
+                *pix = scale_rgb(&low, &high, (i as f64)/max_iter as f64).unwrap();
             }
             else {
-                *pixel = low;
+                *pix = low;
             }
-        }
-    }
-    imgbuf.save(file_path).unwrap();
+    });
+    imgbuf.save(frac.path)
 } 
 
-pub fn mandelbrot(dimension_x: u32, dimension_y: u32, file_path: &str){
-    let mut imgbuf: ImageBuffer<Rgb<u8>, Vec<u8>> = ImageBuffer::new(dimension_x, dimension_y);
-    let max_iter = 1000; 
+pub fn mandelbrot(frac: Fractal) -> Result<()>{
+    let mut imgbuf: ImageBuffer<Rgb<u8>, Vec<u8>> = ImageBuffer::new(frac.dim_x, frac.dim_y);
+    let max_iter = 1000;
 
     let high: Rgb<u8> = Rgb([106,255,206]);
     let low: Rgb<u8> = Rgb([5,5,5]);
 
-    for px in 0..dimension_x {
-        for py in 0..dimension_y {
-            let cx = (px as f32 / dimension_x as f32) * 3.5 - 2.5;
-            let cy = (py as f32 / dimension_y as f32) * 2.0 - 1.0;
+    imgbuf.enumerate_pixels_mut().par_bridge().for_each(|(x, y, pix)|{
+            let cx = (x as f64 / frac.dim_x as f64) * 3.5 - 2.5;
+            let cy = (y as f64 / frac.dim_y as f64) * 2.0 - 1.0;
 
-            let mut x = 0.0_f32;
-            let mut y = 0.0_f32;
+            let mut x = 0.0_f64;
+            let mut y = 0.0_f64;
+            
             let mut i = 0;
             while i < max_iter && x * x + y * y <= 4.0{
                 let xtemp = x * x - y * y + cx;
@@ -57,15 +78,43 @@ pub fn mandelbrot(dimension_x: u32, dimension_y: u32, file_path: &str){
                 x = xtemp;
                 i += 1;
             }
-            let pixel = imgbuf.get_pixel_mut(px, py);
             if i < max_iter {
-                *pixel = scale_rgb(&low, &high, (i as f64)/max_iter as f64).unwrap();
+                *pix = scale_rgb(&low, &high, (i as f64)/max_iter as f64).unwrap();
             }
             else {
-                *pixel = low;
+                *pix = low;
             }
-        }
-    }
-    imgbuf.save(file_path).unwrap();
+    });
+    imgbuf.save(frac.path)
 } 
 
+pub fn tricorn(frac: Fractal) -> Result<()>{
+    let mut imgbuf: ImageBuffer<Rgb<u8>, Vec<u8>> = ImageBuffer::new(frac.dim_x, frac.dim_y);
+    let max_iter = 1000;
+
+    let high: Rgb<u8> = Rgb([106,255,206]);
+    let low: Rgb<u8> = Rgb([5,5,5]);
+
+    imgbuf.enumerate_pixels_mut().par_bridge().for_each(|(x, y, pix)|{
+            let cx = (x as f64 / frac.dim_x as f64) * 3.5 - 2.5;
+            let cy = (y as f64 / frac.dim_y as f64) * 2.0 - 1.0;
+
+            let mut x = 0.0_f64;
+            let mut y = 0.0_f64;
+            
+            let mut i = 0;
+            while i < max_iter && x * x + y * y <= 4.0{
+                let xtemp = x * x - y * y + cx;
+                y = -2.0 * x * y + cy;
+                x = xtemp;
+                i += 1;
+            }
+            if i < max_iter {
+                *pix = scale_rgb(&low, &high, (i as f64)/max_iter as f64).unwrap();
+            }
+            else {
+                *pix = low;
+            }
+    });
+    imgbuf.save(frac.path)
+} 

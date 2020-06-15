@@ -1,14 +1,16 @@
-#![feature(proc_macro_hygiene, decl_macro)]
-
-#[macro_use] extern crate rocket;
-extern crate bcrypt;
-extern crate chrono;
-extern crate env_logger;
-extern crate ratelimit;
+#[macro_use] extern crate serde;
 extern crate image;
+extern crate rayon;
+
 mod mandelbrot;
+use mandelbrot::FractalType;
 
 fn main() {
-    mandelbrot::mandelbrot(3840,2160,"mandelbrot.png");
-    mandelbrot::julia(3840,2160,"julia.png");
+    mandelbrot::julia(mandelbrot::Fractal{
+        fractal_type: FractalType::Julia(-0.79, 0.15),
+        dim_x: 3840,
+        dim_y: 2160,
+        path: "julia_test.png".to_string(),
+    });
 }
+
