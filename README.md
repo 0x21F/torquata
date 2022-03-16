@@ -1,2 +1,2 @@
 # torquata
-A fractal generation API
+A fractal Program
